@@ -1,0 +1,4 @@
+.vscode/
+out/
+results/
+__pycache__/
