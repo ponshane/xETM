@@ -74,3 +74,43 @@ def get_batch(tokens, counts, indices, vocab_size, device):
 
     data_batch = torch.from_numpy(data_batch).float().to(device)
     return data_batch
+
+# Class for a memory-friendly iterator over the dataset
+class MemoryFriendlyFileIterator(object):
+    def __init__(self, filename):
+        self.filename = filename
+
+    def __iter__(self):
+        for line in open(self.filename):
+            yield line.strip().split()
+
+def _get_extension(path):
+    assert isinstance(path, str), 'path extension is not str'
+    filename = path.split(os.path.sep)[-1]
+    return filename.split('.')[-1]
+
+def embedding_reader(emb_path, vocab, emb_size):
+    assert _get_extension(emb_path) == 'txt', "the embedding file should be in txt file."
+    
+    # read word vectors from txt file
+    iterator = MemoryFriendlyFileIterator(emb_path)
+    vectors = {}
+    for line in iterator:
+        word = line[0]
+        if word in vocab:
+            vect = np.array(line[1:]).astype(np.float)
+            vectors[word] = vect
+    
+    # reorder vectors and construct embedding matrix
+    model_embeddings = np.zeros((len(vocab), emb_size))
+
+    not_found = 0
+    for word, index in vocab.items():
+        try:
+            model_embeddings[index] = vectors[word]
+        except KeyError:
+            not_found += 1
+            model_embeddings[index] = np.random.normal(
+                scale=0.6, size=(emb_size, ))
+    print("{}({}) words are not found.".format(not_found, round(not_found/len(vocab), 2)))
+    return model_embeddings

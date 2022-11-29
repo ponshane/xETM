@@ -4,7 +4,7 @@ import os
 import torch
 import numpy as np
 
-from src.model.data import get_data, get_batch
+from src.model.data import get_data, embedding_reader
 from src.model.etm import ETM
 
 parser = argparse.ArgumentParser(description='Cross-lingual Embedded Topic Model')
@@ -86,10 +86,7 @@ args.num_docs_test_2 = len(test_2_tokens)
 
 embeddings = None
 if not args.train_embeddings:
-    # embeddings = data.read_embedding_matrix(vocab, device, load_trainned=False)
-    # args.embeddings_dim = embeddings.size()
-    # TODO: implement embedding loading function
-    pass
+    embeddings = embedding_reader(args.emb_path, vocab, args.emb_size)
 
 """ define checkpoint
 """ 

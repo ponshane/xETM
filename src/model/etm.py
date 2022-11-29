@@ -32,8 +32,8 @@ class ETM(nn.Module):
         if train_embeddings:
             self.rho = nn.Linear(rho_size, vocab_size, bias=False)
         else:
-            num_embeddings, emsize = embeddings.size()
             """the following line seems useless
+            num_embeddings, emsize = embeddings.size()
             rho_size should be equal to emsize
             rho = nn.Embedding(num_embeddings, emsize)
             """
