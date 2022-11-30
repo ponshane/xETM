@@ -87,6 +87,7 @@ args.num_docs_test_2 = len(test_2_tokens)
 embeddings = None
 if not args.train_embeddings:
     embeddings = embedding_reader(args.emb_path, vocab, args.emb_size)
+    embeddings = torch.from_numpy(embeddings).to(device)
 
 """ define checkpoint
 """ 

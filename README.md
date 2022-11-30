@@ -13,11 +13,18 @@ The demo dataset can be downloaded from [here](https://www.dropbox.com/s/6h55c58
 - Step 1, `test_preprocessing.ipynb` formats the dataset into the required format for xETM. The formatted dataset is put in `out/` folder.
 - Step 2, `run.py` trains the model.
 ```
+# given pre-trained word embedding (only train topic embedding)
+python run.py --data_path out --train_embeddings 0 --emb_path out/80dim_50K_selected_vectors.txt --rho_size 80 --emb_size 80 --mode train --epochs 30
+
 # simultaneously learn word embedding and topic embedding 
 python run.py --data_path out --train_embeddings 1 --mode train --epochs 50
 ```
 - Step 3, `run.py` gets learned topic words and infers topic distributions of given documents.
 ```
+# given pre-trained word embedding (only train topic embedding)
+python run.py --data_path out --train_embeddings 0 --emb_path out/80dim_50K_selected_vectors.txt --rho_size 80 --emb_size 80 --load_from results/D_80_K_50_Epo_30_Opt_adam --mode eval
+
+# simultaneously learn word embedding and topic embedding 
 python run.py --data_path out --train_embeddings 1 --mode eval --load_from results/D_300_K_50_Epo_50_Opt_adam
 ```
 
