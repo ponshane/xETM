@@ -143,6 +143,11 @@ if args.mode == 'train':
             lr = optimizer.param_groups[0]['lr']
             if args.anneal_lr and (len(all_val_ppls) > args.nonmono and val_ppl > min(all_val_ppls[:-args.nonmono]) and lr > 1e-5):
                 optimizer.param_groups[0]['lr'] /= args.lr_factor
+
+        # save 9, 19, 29 model
+        if epoch % 10 == 9:
+            with open(f"{ckpt}_{epoch:02}", 'wb') as f:
+                torch.save(model, f)
         
         all_val_ppls.append(val_ppl)
 
