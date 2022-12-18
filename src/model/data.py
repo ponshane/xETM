@@ -70,6 +70,8 @@ def get_batch(tokens, counts, indices, vocab_size, device):
 
         if doc_id != -1:
             for j, word in enumerate(doc):
+                if word.size == 0:
+                    continue
                 data_batch[i, word] = count[j]
 
     data_batch = torch.from_numpy(data_batch).float().to(device)

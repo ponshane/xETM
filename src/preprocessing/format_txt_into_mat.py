@@ -49,7 +49,7 @@ def _initialize_vocabulary_dict(init_docs, max_df, min_df):
 
     return word2id
 
-def _split_data(init_docs, word2id, ratio):
+def _split_data(init_docs, word2id, ratio, suffix):
 
     num_docs = len(init_docs)
 
@@ -68,7 +68,7 @@ def _split_data(init_docs, word2id, ratio):
     array([1, 7, 4, 3, 0, 9, 2, 5, 8, 6]) # random
     """
     # save the order of shuffled docs
-    np.savetxt('doc_order.txt', idx_permute, fmt="%d")
+    np.savetxt(f'doc_order{suffix}.txt', idx_permute, fmt="%d")
 
     # remove words not in train_data
     # as you can see, idx_permute[idx_d] is used for picking the document in init_docs
@@ -133,7 +133,7 @@ def _export_matrixes(path_save, bow_docs_dict):
         savemat(path_save + key + '_tokens', {'tokens': bow_tokens}, do_compression=True)
         savemat(path_save + key + '_counts', {'counts': bow_counts}, do_compression=True)
 
-def format_from_text(path_text, path_save, norm=False, max_df=0.7, min_df=10, ratio={"training":0.85, "testing": 0.1}):
+def format_from_text(path_text, path_save, norm=False, max_df=0.7, min_df=10, ratio={"training":0.85, "testing": 0.1}, suffix:str=""):
 
     # read docs from file
     with open(path_text, 'r') as f:
@@ -147,7 +147,7 @@ def format_from_text(path_text, path_save, norm=False, max_df=0.7, min_df=10, ra
     word2id = _initialize_vocabulary_dict(docs, max_df, min_df)
 
     # split docs into training, validation, and testing set
-    refined_word2id, docs_dict = _split_data(docs, word2id, ratio)
+    refined_word2id, docs_dict = _split_data(docs, word2id, ratio, suffix=suffix)
 
     # transform dataset into bag-of-words (bow) matrix
     bow_docs_dict = _create_matrixes(refined_word2id, docs_dict)

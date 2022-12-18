@@ -269,7 +269,11 @@ class ETM(nn.Module):
             #         print('Computing topic coherence...')
             #         get_topic_coherence(beta, training_set, vocabulary)
             print('Computing topic diversity...')
+            get_topic_diversity(beta, 25)
             get_topic_diversity(beta, 50)
+            get_topic_diversity(beta, 100)
+            get_topic_diversity(beta, 200)
+            get_topic_diversity(beta, 500)
             return ppl_dc
     
     def get_topic_words(self, args, vocab):
@@ -289,8 +293,8 @@ class ETM(nn.Module):
                 gamma = beta[k]
                 # return top word index => https://stackoverflow.com/questions/6910641/how-do-i-get-indices-of-n-maximum-values-in-a-numpy-array
                 # TODO: save all topic word
-                # top_words = list(gamma.cpu().numpy().argsort()[-args.num_words+1:][::-1])
-                top_words = list(gamma.cpu().numpy().argsort()[::-1])
+                top_words = list(gamma.cpu().numpy().argsort()[-args.num_words+1:][::-1])
+                # top_words = list(gamma.cpu().numpy().argsort()[::-1])
                 topic_words = [vocab[a] for a in top_words]
                 words_all.append(topic_words)
                 for word in topic_words:
