@@ -67,10 +67,15 @@ def _split_data(init_docs, word2id, ratio):
     >>> np.random.permutation(10)
     array([1, 7, 4, 3, 0, 9, 2, 5, 8, 6]) # random
     """
+    # save the order of shuffled docs
+    np.savetxt('doc_order.txt', idx_permute, fmt="%d")
 
     # remove words not in train_data
     # as you can see, idx_permute[idx_d] is used for picking the document in init_docs
-    vocab = list(set([w for idx_d in range(trSize) for w in init_docs[idx_permute[idx_d]].split() if w in word2id]))
+    # TODO: ask, why use trSzie to build `vocab`, 直接用全部不是更好嗎
+    vocab = list(
+        set([w for idx_d in range(trSize) for w in init_docs[idx_permute[idx_d]].split() if w in word2id])
+    )
     word2id = dict([(w, j) for j, w in enumerate(vocab)])
     id2word = dict([(j, w) for j, w in enumerate(vocab)])
     print('  vocabulary after removing words not in train: {}'.format(len(vocab)))

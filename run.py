@@ -1,5 +1,6 @@
 import argparse
 import os
+import json
 
 import torch
 import numpy as np
@@ -42,7 +43,7 @@ parser.add_argument('--lr_factor', type=float, default=4.0, help='divide learnin
 ### evaluation, visualization, and logging-related arguments
 parser.add_argument('--log_interval', type=int, default=10, help='when to log training')
 # parser.add_argument('--visualize_every', type=int, default=10, help='when to visualize results')
-parser.add_argument('--num_words', type=int, default=20, help='number of words for topic viz')
+parser.add_argument('--num_words', type=int, default=10000, help='number of words for topic viz')
 parser.add_argument('--eval_batch_size', type=int, default=256, help='input batch size for evaluation')
 parser.add_argument('--load_from', type=str, default='', help='the name of the ckpt to eval from')
 
@@ -134,8 +135,8 @@ if args.mode == 'train':
         print("The validation scores", val_ppl)
 
         if val_ppl < best_val_ppl:
-            with open(ckpt, 'wb') as f:
-                torch.save(model, f)
+            # with open(ckpt, 'wb') as f:
+            #     torch.save(model, f)
             best_epoch = epoch
             best_val_ppl = val_ppl
         else:
@@ -150,7 +151,9 @@ if args.mode == 'train':
                 torch.save(model, f)
         
         all_val_ppls.append(val_ppl)
-
+        
+    with open(ckpt, 'wb') as f:
+        torch.save(model, f)
     with open(ckpt, 'rb') as f:
         model = torch.load(f)
 
@@ -166,8 +169,26 @@ elif args.mode == "eval":
     reverse_vocab = {v: k for k, v in vocab.items()}
     words_all, source_topics, target_topics = model.get_topic_words(args, reverse_vocab)
     print(source_topics, target_topics)
+    
+    # save topic words
+    with open(f"./experiment/topic_words_K_{args.num_topics}.txt", "w") as f:
+        for words in words_all:
+            f.write(" ".join(words) + "\n")
+    # save source topic
+    with open(f"./experiment/source_topic_K_{args.num_topics}.json", "w") as f:
+        json.dump(source_topics, f, indent=4)
+    
+    # save target topic 
+    with open(f"./experiment/target_topic_K_{args.num_topics}.json", "w") as f:
+        json.dump(target_topics, f, indent=4)
 
     thetas = model.infer_theta(args, train_tokens, train_counts)
     print(thetas[0], thetas[0].shape)
     print(thetas.shape)
+    # save thetas 
+    np.save(
+        f"./experiment/thetas_K_{args.num_topics}", 
+        thetas.cpu().numpy()
+    )
+
     print("Finish Theta Inference.")

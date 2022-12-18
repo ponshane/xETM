@@ -287,7 +287,9 @@ class ETM(nn.Module):
                 target_topics['topic_{}'.format(k)] = list()
                 gamma = beta[k]
                 # return top word index => https://stackoverflow.com/questions/6910641/how-do-i-get-indices-of-n-maximum-values-in-a-numpy-array
-                top_words = list(gamma.cpu().numpy().argsort()[-args.num_words+1:][::-1])
+                # TODO: save all topic word
+                # top_words = list(gamma.cpu().numpy().argsort()[-args.num_words+1:][::-1])
+                top_words = list(gamma.cpu().numpy().argsort()[::-1])
                 topic_words = [vocab[a] for a in top_words]
                 words_all.append(topic_words)
                 for word in topic_words:
