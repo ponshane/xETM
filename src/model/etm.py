@@ -1,4 +1,5 @@
 from .data import get_batch
+from ..utils import get_topic_diversity
 
 import math
 import re
@@ -267,9 +268,8 @@ class ETM(nn.Module):
             #     if tc:
             #         print('Computing topic coherence...')
             #         get_topic_coherence(beta, training_set, vocabulary)
-            #     if td:
-            #         print('Computing topic diversity...')
-            #         get_topic_diversity(beta, 25)
+            print('Computing topic diversity...')
+            get_topic_diversity(beta, 50)
             return ppl_dc
     
     def get_topic_words(self, args, vocab):
@@ -277,6 +277,7 @@ class ETM(nn.Module):
         with torch.no_grad():
 
             beta = self.get_beta()
+            get_topic_diversity(beta, 50)
 
             source_topics = dict()  
             target_topics = dict()
