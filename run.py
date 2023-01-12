@@ -25,6 +25,7 @@ parser.add_argument('--batch_size', type=int, default=256, help='input batch siz
 parser.add_argument('--suffix', type=str, default="", help='suffix of eval production') # just don't set default. source: https://stackoverflow.com/questions/38533258/how-can-argparse-set-default-value-of-optional-parameter-to-null-or-empty
 parser.add_argument('--data_label_path', type=str, help='the label of the traiing data')
 parser.add_argument('--shuffle_data_order_path', type=str, help='the label of the traiing data')
+parser.add_argument('--full_data_path', type=str, help='the label of the traiing data')
 
 
 ### model-related arguments
@@ -178,7 +179,8 @@ elif args.mode == "eval":
     ## load full docs
     from src.preprocessing.format_txt_into_mat import _create_matrixes, split_bow
     # TODO: make full corpus to id
-    with open("./data/training_all_6011.txt", "r") as f:
+    # with open("./data/training_all_6011.txt", "r") as f:
+    with open(args.full_data_path, "r") as f:
         docs = [line.strip().split() for line in f.readlines()]
         docs = [list(filter(lambda x: x is not None, map(vocab.get, doc))) for doc in docs]
 
@@ -201,13 +203,14 @@ elif args.mode == "eval":
 
     # thetas = model.infer_theta(args, train_tokens, train_counts)
     thetas = thetas.cpu().numpy()
-    print(thetas[0], thetas[0].shape)
+    # print(thetas[0], thetas[0].shape)
     print(thetas.shape)
+
     # save thetas 
-    # np.save(
-    #     f"./experiment/thetas_K_{args.num_topics}", 
-    #     thetas.cpu().numpy()
-    # )
+    np.save(
+        f"./experiment/thetas_K_{args.num_topics}_full", 
+        thetas
+    )
 
     ## remove overlap words in top 200 
     n = 200
@@ -228,7 +231,6 @@ elif args.mode == "eval":
         print(unique_words)
 
     
-    # print(source_topics, target_topics)
     
     # save topic words
     with open(f"./experiment/topic_word/topic_words_D_{args.emb_size}_K_{args.num_topics}_{args.suffix}.txt", "w") as f:
@@ -249,34 +251,30 @@ elif args.mode == "eval":
     print(f"average topic share:")
     print(np.nanmean(thetas, axis=0))
 
-    # doc_order = pd.read_csv(args.shuffle_data_order_path, header=None) ## need to adjust following training data
-    # doc_order.columns=["shuffle_order"]
-    ## original docs need to arrange in `shuffle order`
-    with open(args.shuffle_data_order_path, "r") as f:
-        origin_position = [l.strip() for l in f.readlines()]
-    doc_order = pd.DataFrame({"origin_position": origin_position})
-    doc_order["now_position"] = list(doc_order.index)
-    doc_order = doc_order.astype(int)
+    # ## original docs need to arrange in `shuffle order`
+    # with open(args.shuffle_data_order_path, "r") as f:
+    #     origin_position = [l.strip() for l in f.readlines()]
+    # doc_order = pd.DataFrame({"origin_position": origin_position})
+    # doc_order["now_position"] = list(doc_order.index)
+    # doc_order = doc_order.astype(int)
 
-    ## compute the jsd
-    remain_arts = doc_order.iloc[:thetas.shape[0], :] #training docs
-    total_len = doc_order.shape[0]
-    en_origin_index = np.arange(0, total_len/2,dtype=int)
-    # zh_origin_index = np.arange(total_len/2, total_len, dtype=int)
-    zh_origin_index = en_origin_index + int(total_len/2)
-    # 找出 origin idx 還剩多少在現在的 training data
-    zh_en_idx = np.in1d(zh_origin_index, remain_arts.origin_position.values) & np.in1d(en_origin_index, remain_arts.origin_position.values)
-    en_remain_idx = remain_arts.origin_position.isin(en_origin_index[zh_en_idx]).values
-    zh_remain_idx = remain_arts.origin_position.isin(zh_origin_index[zh_en_idx]).values
-    en_now_position_idx = remain_arts.loc[en_remain_idx,:].sort_values("origin_position")['now_position'].values
-    zh_now_position_idx = remain_arts.loc[zh_remain_idx,:].sort_values("origin_position")['now_position'].values
-    # zh_shuffle_idx = doc_order.loc[zh_index[zh_en_idx],'shuffle_order'].values
-    # en_shuffle_idx = doc_order.loc[en_index[zh_en_idx],'shuffle_order'].values
-    jsd = distance.jensenshannon(
-        thetas[en_now_position_idx,:],
-        thetas[zh_now_position_idx,:],
-        axis = 1
-    )
+    # ## compute the jsd
+    # remain_arts = doc_order.iloc[:thetas.shape[0], :] #training docs
+    # total_len = doc_order.shape[0]
+    # en_origin_index = np.arange(0, total_len/2,dtype=int)
+    # # zh_origin_index = np.arange(total_len/2, total_len, dtype=int)
+    # zh_origin_index = en_origin_index + int(total_len/2)
+    # # 找出 origin idx 還剩多少在現在的 training data
+    # zh_en_idx = np.in1d(zh_origin_index, remain_arts.origin_position.values) & np.in1d(en_origin_index, remain_arts.origin_position.values)
+    # en_remain_idx = remain_arts.origin_position.isin(en_origin_index[zh_en_idx]).values
+    # zh_remain_idx = remain_arts.origin_position.isin(zh_origin_index[zh_en_idx]).values
+    # en_now_position_idx = remain_arts.loc[en_remain_idx,:].sort_values("origin_position")['now_position'].values
+    # zh_now_position_idx = remain_arts.loc[zh_remain_idx,:].sort_values("origin_position")['now_position'].values
+    # jsd = distance.jensenshannon(
+    #     thetas[en_now_position_idx,:],
+    #     thetas[zh_now_position_idx,:],
+    #     axis = 1
+    # )
     
     
     jsd = distance.jensenshannon(
@@ -286,20 +284,22 @@ elif args.mode == "eval":
     )
     print("JSD:")
     print(pd.Series(jsd).describe())
+    print("the accuary of max topic of comparable article: ")
+    print(
+        np.mean(
+            thetas[np.arange(0, int(thetas.shape[0]/2)), :].argmax(axis=1) == thetas[np.arange(int(thetas.shape[0]/2), thetas.shape[0]), :].argmax(axis=1)
+        )
+    )
+    print(f"na article: {np.isnan(thetas.sum(axis=1)).sum()}")
 
     n = 15000
     print("the comparable thetas and docs:")
+    for n in (5000, 15000, 20000, 25000):
     # print(
     #     thetas[en_now_position_idx,:][n,:],
     #     "\n",
     #     thetas[zh_now_position_idx,:][n,:],
     # )
-    print(
-        thetas[n,:],
-        "\n",
-        thetas[int(n+thetas.shape[0]/2),:],
-    )
-
     # awesome method https://stackoverflow.com/questions/16992713/translate-every-element-in-numpy-array-according-to-key/16992783#16992783
     # print(en_now_position_idx[n], zh_now_position_idx[n])
     # print(
@@ -309,14 +309,19 @@ elif args.mode == "eval":
     # )
     # ", ".join(np.vectorize(reverse_vocab.get)(train_tokens[zh_now_position_idx[n]][0]))
     # remain_arts.loc[remain_arts.now_position == zh_now_position_idx[n],:]
+    # print(en_now_position_idx[n], zh_now_position_idx[n])
 
-    print(en_now_position_idx[n], zh_now_position_idx[n])
-    print(
-        ", ".join(np.vectorize(reverse_vocab.get)(full_tokens[n])[0]),
-        "\n",
-        ", ".join(np.vectorize(reverse_vocab.get)(full_tokens[int(n+thetas.shape[0]/2)])[0]),
-
-    )
+        print(
+            np.vstack((
+                thetas[n,:],
+                thetas[int(n+thetas.shape[0]/2),:],
+            )).T
+        )
+        print(
+            ", ".join(np.vectorize(reverse_vocab.get)(full_tokens[n])[0]),
+            "\n",
+            ", ".join(np.vectorize(reverse_vocab.get)(full_tokens[int(n+thetas.shape[0]/2)])[0]),
+        )
 
     ## the max agreement of each docs
     rows = np.arange(thetas.shape[0])
@@ -339,6 +344,34 @@ elif args.mode == "eval":
     "topic_labels": thetas.argmax(axis=1),
     "college_labels": college_label
     })
-    print(compute_purity(df).join(df.topic_labels.value_counts().to_frame()).sort_values("topic_labels", ascending=False))
-   
+
+    print(compute_purity(df).set_index("topic").join(df.topic_labels.value_counts().to_frame()).sort_values("topic_labels", ascending=False))
+    
+    # JSD of topic distribution
+    # output the topic predict distribution
+    df_purity = compute_purity(df).set_index("topic")    
+    margin_topic_distri = np.nansum(thetas, axis=0)/np.nansum(thetas)
+    
+    df_purity['margin'] = margin_topic_distri
+    
+    g = df_purity.groupby("topic_label")
+    topic_distri = df_purity.groupby("topic_label")['margin'].sum()
+    true_distribution = pd.DataFrame({
+        "true_frequency":[31302, 7227, 93623, 16722, 6011, 8277]
+    }, index = ["商管學院", "文學院", "理工電資學院", "生物資源暨農學院", "社會科學院", "醫學院"]
+    )
+    true_distribution['true_proportion'] = true_distribution.true_frequency/sum(true_distribution.true_frequency)
+    true_distribution = true_distribution.join(topic_distri).fillna(0)
+    true_distribution
+    
+    print("the reflexibility (JSD) of model to true distribution: ")
+    print(
+        distance.jensenshannon(
+            true_distribution['true_proportion'],
+            true_distribution['margin']
+        )
+    )
+    print(true_distribution['true_proportion'].to_frame().T)
+    print(true_distribution['margin'].to_frame().T)
+
     print("Finish Theta Inference.")
