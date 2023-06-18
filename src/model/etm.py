@@ -1,5 +1,5 @@
 from .data import get_batch
-from ..utils import get_topic_diversity
+from ..evaluate import get_topic_diversity
 
 import math
 import re
@@ -295,7 +295,9 @@ class ETM(nn.Module):
                 # TODO: save all topic word
                 top_words = list(gamma.cpu().numpy().argsort()[-args.num_words+1:][::-1])
                 # top_words = list(gamma.cpu().numpy().argsort()[::-1])
-                topic_words = [vocab[a] for a in top_words]
+                #or `np.vectorize(vocab.get)(top_words)`
+                topic_words = [vocab.get(a) for a in top_words]
+                topic_words = list(filter(lambda item: item is not None, topic_words))
                 words_all.append(topic_words)
                 for word in topic_words:
                     if re.match("^[a-zA-Z].", word):
